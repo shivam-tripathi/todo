@@ -2,23 +2,22 @@ import argparse
 import json
 from datetime import datetime
 
-parser = argparse.ArgumentParser(description = 'Arguments for to-do list')
-parser.add_argument('add', )
-parser.add_argument('todo', action = 'store_true')
-parser.add_argument()
 
-
-class Task :
+class Task:
 
     def __init__(self, task_id, job):
-        self.task_id = task_id
-        self.job     = job
-        self.time    = datetime.now()
-        self.status  = 'complete'
+        self.task_id  = task_id
+        self.job      = job
+        self.time     = datetime.now()
+        self.complete = False
 
-class Job :
+
+class Job:
 
     def __init__(self):
+        parser = argparse.ArgumentParser(description = 'Arguments for to-do list')
+        parser.add_argument('add',)
+        parser.add_argument('todo', action = 'store_true')
         self._fname = open('.todo', 'r+')
         self._tasks = json.load(self._fname)
         self._task_number = self._tasks[0]
@@ -31,7 +30,7 @@ class Job :
     def add(self, arg):
         self._tasks[0] += 1
         entry_number = self._tasks[0]
-        self._tasks.append( Task(self._task_number, arg)
+        self._tasks.append(Task(self._task_number, arg))
         self._fname = open('.todo', 'r+')
         json.dump(self._tasks, self._fname)
 
@@ -45,13 +44,12 @@ class Job :
 
     def completed(args):
         t = self._find_index(args)
-        self._tasks[t].status = 'complete'
+        self._tasks[t].status = True
 
     def _find_index(args):
         for t in self._tasks:
             if t.task_id == args:
                 return t
-
 
 
 test = Job()
