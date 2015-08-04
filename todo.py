@@ -1,39 +1,61 @@
 import argparse
 import json
 from datetime import datetime
-
-parser = argparse.ArgumentParser(description = 'Arguments for to-do list')
-parser.add_argument('add', )
-parser.add_argument('todo', action = 'store_true')
-parser.add_argument()
+import os
 
 
-class Task :
+class Task:
 
-    def __init__(self, task_id, job):
-        self.task_id = task_id
-        self.job     = job
-        self.time    = datetime.now()
-        self.status  = 'complete'
+    def __init__(self, task_id, job, time = datetime.now(), completed = False):
+        self.task_id  = task_id
+        self.job      = job
+        self.time     = time
+        self.complete = completed
 
-class Job :
+    def __str__(self):
+        return str(self.task_id) + ". " + self.job + "\t" + str(self.time)
+
+class Job:
 
     def __init__(self):
-        self._fname = open('.todo', 'r+')
-        self._tasks = json.load(self._fname)
-        self._task_number = self._tasks[0]
-        self._fname.close()
+        directory = os.path.join(os.path.expanduser('~'), '.config', 'todo')
+        filepath = os.path.join(directory, '.todo')
+        self._fname = None
+        self._tasks = []
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            self._tasks = [0]
+        elif not os.path.exists(filepath):
+            self._tasks = [0]
+            self.fname = open(filepath, 'w+')
+        else:
+            self._fname = open(filepath, 'r')
+        if not self._tasks:
+            try:
+                # error is possible in json.load if fname is empty
+                data = json.load(self._fname)
+                self._tasks = [data[0]]
+                # converting all the string versions of the tasks to
+                # Task instances
+                for task_str in data[1:]:
+                    task_id, job, time, complete = task_str
+                    time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
+                    self._tasks.append(Task(task_id, job, time, complete))
+            except ValueError:
+                self._tasks = [0]
+        self._task_number = self._tasks[0] + 1
+        self._fname = open(filepath, 'r+')
 
     def print_tasks(self):
-        for i in range(1,self._task_number):
-            print (self._tasks[i])
+        for task in self._tasks[1:]:
+            print (task)
 
     def add(self, arg):
         self._tasks[0] += 1
         entry_number = self._tasks[0]
-        self._tasks.append( Task(self._task_number, arg)
-        self._fname = open('.todo', 'r+')
-        json.dump(self._tasks, self._fname)
+        self._tasks.append(Task(self._task_number, arg))
+        json.dump(self.json(), self._fname)
+        self._fname.close()
 
     def remove(self, args):
         t = self._find_index(args)
@@ -45,15 +67,26 @@ class Job :
 
     def completed(args):
         t = self._find_index(args)
-        self._tasks[t].status = 'complete'
+        self._tasks[t].status = True
 
     def _find_index(args):
         for t in self._tasks:
             if t.task_id == args:
                 return t
 
+    def json(self):
+        lst = []
+        lst.append(self._tasks[0])
+        for task in self._tasks[1:]:
+            x = [task.task_id, task.job, str(task.time), task.complete]
+            lst.append(x)
+        return lst
 
-
-test = Job()
-test.add("trial input")
-test.print_tasks()
+if __name__ == '__main__':
+    job = Job()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--add", help = "add a task")
+    args = parser.parse_args()
+    if args.add:
+        job.add(args.add)
+        job.print_tasks()
