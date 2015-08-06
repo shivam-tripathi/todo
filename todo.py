@@ -19,17 +19,17 @@ class Job:
 
     def __init__(self):
         directory = os.path.join(os.path.expanduser('~'), '.config', 'todo')
-        filepath = os.path.join(directory, '.todo')
+        self._filepath = os.path.join(directory, '.todo')
         self._fname = None
         self._tasks = []
         if not os.path.exists(directory):
             os.makedirs(directory)
             self._tasks = [0]
-        elif not os.path.exists(filepath):
+        elif not os.path.exists(self._filepath):
             self._tasks = [0]
-            self.fname = open(filepath, 'w+')
+            self.fname = open(self._filepath, 'w+')
         else:
-            self._fname = open(filepath, 'a+')
+            self._fname = open(self._filepath, 'a+')
         if not self._tasks:
             try:
                 # error is possible in json.load if fname is empty
@@ -44,11 +44,15 @@ class Job:
             except ValueError:
                 self._tasks = [0]
         self._task_number = self._tasks[0] + 1
-        self._fname = open(filepath, 'w+')
+        self._fname = open(self._filepath, 'w+')
 
     def print_tasks(self):
+        if self._fname.closed :
+            self._fname = open(self._filepath, 'w+')
         for task in self._tasks[1:]:
             print (task)
+        json.dump(self.json(), self._fname)
+        self._fname.close()
 
     def add(self, arg):
         self._tasks[0] += 1
@@ -90,6 +94,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", help = "add a task")
     parser.add_argument("-r", "--remove", help = "remove a task")
+    parser.add_argument("-l", "--list", action = "store_true", help = "print tasks list")
     args = parser.parse_args()
     if args.add:
         job.add(args.add)
@@ -97,4 +102,6 @@ if __name__ == '__main__':
     elif args.remove:
         job.remove(args.remove)
         print("List of tasks")
+        job.print_tasks()
+    elif args.list:
         job.print_tasks()
