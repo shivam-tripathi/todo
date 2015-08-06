@@ -18,12 +18,32 @@ class Task:
 class Job:
 
     def __init__(self):
-        directory = os.path.join(os.path.expanduser('~'), '.config', 'todo')
-        self._filepath = os.path.join(directory, '.todo')
-        self._fname = None
+        self._directory = os.path.join(os.path.expanduser('~'), '.config', 'todo')
+        self._filepath = os.path.join(self._directory, '.todo')
+        self._open_file()
+        self._task_number = self._tasks[0] + 1
+
+    def print_tasks(self):
+        if self._fname.closed :
+            self._open_file()
+        for task in self._tasks[1:]:
+            print (task)
+        json.dump(self.json(), self._fname)
+        self._fname.close()
+
+    def add(self, arg):
+        if self._fname.closed :
+            self._open_file()
+        self._tasks[0] += 1
+        entry_number = self._tasks[0]
+        self._tasks.append(Task(self._task_number, arg))
+        json.dump(self.json(), self._fname)
+        self._fname.close()
+
+    def _open_file(self):
         self._tasks = []
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        if not os.path.exists(self._directory):
+            os.makedirs(self._directory)
             self._tasks = [0]
         elif not os.path.exists(self._filepath):
             self._tasks = [0]
@@ -43,23 +63,8 @@ class Job:
                     self._tasks.append(Task(task_id, job, time, complete))
             except ValueError:
                 self._tasks = [0]
-        self._task_number = self._tasks[0] + 1
         self._fname = open(self._filepath, 'w+')
 
-    def print_tasks(self):
-        if self._fname.closed :
-            self._fname = open(self._filepath, 'w+')
-        for task in self._tasks[1:]:
-            print (task)
-        json.dump(self.json(), self._fname)
-        self._fname.close()
-
-    def add(self, arg):
-        self._tasks[0] += 1
-        entry_number = self._tasks[0]
-        self._tasks.append(Task(self._task_number, arg))
-        json.dump(self.json(), self._fname)
-        self._fname.close()
 
     def remove(self, args):
         t = self._find_task(args)
