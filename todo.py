@@ -29,7 +29,7 @@ class Job:
             self._tasks = [0]
             self.fname = open(filepath, 'w+')
         else:
-            self._fname = open(filepath, 'r')
+            self._fname = open(filepath, 'a+')
         if not self._tasks:
             try:
                 # error is possible in json.load if fname is empty
@@ -44,7 +44,7 @@ class Job:
             except ValueError:
                 self._tasks = [0]
         self._task_number = self._tasks[0] + 1
-        self._fname = open(filepath, 'r+')
+        self._fname = open(filepath, 'w+')
 
     def print_tasks(self):
         for task in self._tasks[1:]:
@@ -58,20 +58,23 @@ class Job:
         self._fname.close()
 
     def remove(self, args):
-        t = self._find_index(args)
+        t = self._find_task(args)
         self._tasks.remove(t)
+        json.dump(self.json(), self._fname)
+        self._fname.close()
 
-    def check_status(args):
+
+    def check_status(self, args):
         t = self._find_index(args)
-        return self._tasks[t].status
+        return self._tasks[t].complete
 
-    def completed(args):
+    def completed(self, args):
         t = self._find_index(args)
-        self._tasks[t].status = True
+        self._tasks[t].complete = True
 
-    def _find_index(args):
-        for t in self._tasks:
-            if t.task_id == args:
+    def _find_task(self, args):
+        for t in self._tasks[1:]:
+            if t.task_id == int(args):
                 return t
 
     def json(self):
@@ -86,7 +89,12 @@ if __name__ == '__main__':
     job = Job()
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", help = "add a task")
+    parser.add_argument("-r", "--remove", help = "remove a task")
     args = parser.parse_args()
     if args.add:
         job.add(args.add)
+        job.print_tasks()
+    elif args.remove:
+        job.remove(args.remove)
+        print("List of tasks")
         job.print_tasks()
