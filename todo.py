@@ -85,7 +85,7 @@ class Job:
         if self._fname.closed:
             self._open_file()
         t = self._find_task(args)
-        t.complete = True
+        t.complete = not t.complete
         json.dump(self.json(), self._fname)
         self._fname.close()
 
