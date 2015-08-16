@@ -5,7 +5,6 @@ import os
 
 
 class Task:
-
     def __init__(self, task_id, job, time = datetime.now(), completed = False):
         self.task_id  = task_id
         self.job      = job
@@ -13,10 +12,15 @@ class Task:
         self.complete = completed
 
     def __str__(self):
-        return str(self.task_id) + ". " + self.job + "\t" + str(self.time)
+        s = str(self.task_id) + ". " + self.job + "\t" + str(self.time) + "\t"
+        if self.complete:
+            s = s + "Complete"
+        else:
+            s = s + "Not Complete"
+        return s
+
 
 class Job:
-
     def __init__(self):
         self._directory = os.path.join(os.path.expanduser('~'), '.config', 'todo')
         self._filepath = os.path.join(self._directory, '.todo')
@@ -24,7 +28,7 @@ class Job:
         self._task_number = self._tasks[0] + 1
 
     def print_tasks(self):
-        if self._fname.closed :
+        if self._fname.closed:
             self._open_file()
         for task in self._tasks[1:]:
             print (task)
@@ -32,7 +36,7 @@ class Job:
         self._fname.close()
 
     def add(self, arg):
-        if self._fname.closed :
+        if self._fname.closed:
             self._open_file()
         self._tasks[0] += 1
         entry_number = self._tasks[0]
@@ -78,8 +82,12 @@ class Job:
         return self._tasks[t].complete
 
     def completed(self, args):
-        t = self._find_index(args)
-        self._tasks[t].complete = True
+        if self._fname.closed:
+            self._open_file()
+        t = self._find_task(args)
+        t.complete = not t.complete
+        json.dump(self.json(), self._fname)
+        self._fname.close()
 
     def _find_task(self, args):
         for t in self._tasks[1:]:
@@ -100,6 +108,7 @@ if __name__ == '__main__':
     parser.add_argument("-a", "--add", help = "add a task")
     parser.add_argument("-r", "--remove", help = "remove a task")
     parser.add_argument("-l", "--list", action = "store_true", help = "print tasks list")
+    parser.add_argument("-c", "--complete", help = "mark a task as completed")
     args = parser.parse_args()
     if args.add:
         job.add(args.add)
@@ -110,3 +119,5 @@ if __name__ == '__main__':
         job.print_tasks()
     elif args.list:
         job.print_tasks()
+    elif args.complete:
+        job.completed(args.complete)
